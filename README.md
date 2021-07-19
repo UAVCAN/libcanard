@@ -224,6 +224,22 @@ my_transfer->payload_size = sizeof(buffer);
 result = canardTxPush(&ins, &my_transfer);
 ```
 
+A simple API for generating CAN hardware acceptance filter configurations is also provided.
+Acceptance filters are generated in an extended 29-bit ID + mask scheme and can be used to minimize the number of irrelevant transfers processed in software.
+
+```c
+// Generate an acceptance filter to receive only uavcan.node.Heartbeat.1.0 messages (fixed port ID 7509):
+CanardAcceptanceFilterConfig heartbeat_config = canardMakeAcceptanceFilterConfigForSubject(7509);
+CanardAcceptanceFilterConfig register_access_config = canardMakeAcceptanceFilterConfigForService(384, ins.node_id);
+
+// You can also combine the two filter configurations into one (may also accept in other messages).
+// This allows consolidating a large set of configurations to fit the number of hardware filters.
+// For more information on the optimal subset of configurations to consolidate to minimize wasted CPU,
+// see the UAVCAN specification.
+CanardAcceptanceFilterConfig combined_config = canardConsolidateAcceptanceFilterConfigs(&heartbeat_config, &register_access_config);
+configureHardwareFilters(combined_config.extended_can_id, combined_config.extended_mask);
+```
+
 Full API specification is available in the documentation.
 If you find the examples to be unclear or incorrect, please, open a ticket.
 
