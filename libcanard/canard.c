@@ -1099,3 +1099,33 @@ int8_t canardRxUnsubscribe(CanardInstance* const    ins,
     }
     return out;
 }
+
+CanardAcceptanceFilterConfig canardMakeAcceptanceFilterConfigForSubject(const CanardPortID subject_id)
+{
+	CanardAcceptanceFilterConfig out = {0};
+
+	out.extended_can_id = subject_id << OFFSET_SUBJECT_ID;
+	out.extended_mask = FLAG_SERVICE_NOT_MESSAGE | FLAG_RESERVED_07 | (CANARD_SUBJECT_ID_MAX << OFFSET_SUBJECT_ID);
+
+	return out;
+}
+
+CanardAcceptanceFilterConfig canardMakeAcceptanceFilterConfigForService(const CanardPortID service_id, const CanardNodeID local_node_id)
+{
+	CanardAcceptanceFilterConfig out = {0};
+
+	out.extended_can_id = FLAG_SERVICE_NOT_MESSAGE | (service_id << OFFSET_SERVICE_ID) | (local_node_id << OFFSET_DST_NODE_ID);
+	out.extended_mask = FLAG_SERVICE_NOT_MESSAGE | FLAG_RESERVED_23 | (CANARD_SERVICE_ID_MAX << OFFSET_SERVICE_ID) | (CANARD_NODE_ID_MAX << OFFSET_DST_NODE_ID);
+
+	return out;
+}
+
+CanardAcceptanceFilterConfig canardConsolidateAcceptanceFilterConfigs(const CanardAcceptanceFilterConfig *a, const CanardAcceptanceFilterConfig *b)
+{
+	CanardAcceptanceFilterConfig out = {0};
+
+	out.extended_mask = a->extended_mask & b->extended_mask & ~(a->extended_can_id ^ b->extended_can_id);
+	out.extended_can_id = a->extended_can_id & out.extended_mask;
+
+	return out;
+}
